@@ -24,6 +24,7 @@ return new class extends Migration
             $table->string('image');
             $table->string('author');
             $table->integer('genres_id');
+            $table->time('duration'); 
         });
         
         Schema::create('genres', function (Blueprint $table) {

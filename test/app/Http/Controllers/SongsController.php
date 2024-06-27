@@ -21,7 +21,11 @@ class SongsController extends Controller
             ->groupBy('saved_lists.id', 'saved_lists.name', 'saved_lists.user_id')
             ->get();
 
-        $results = DB::table('songs')->inRandomOrder()->get();
+        $results = DB::table('songs')
+            ->select('id', 'name', 'author', 'image', 'duration') // Ensure 'duration' is selected
+            ->inRandomOrder()
+            ->get();
+
         $genres = DB::table('genres')->get();
 
         return view('home', [
@@ -51,10 +55,18 @@ class SongsController extends Controller
         $songs = DB::table('saved_lists_songs')
             ->join('songs', 'saved_lists_songs.song_id', '=', 'songs.id')
             ->where('saved_lists_songs.saved_lists_id', $playlistId)
-            ->select('songs.id', 'songs.name', 'songs.author')  // Ensure 'songs.id' is selected
+            ->select('songs.id', 'songs.name', 'songs.author', 'songs.duration') // Ensure 'duration' is selected
             ->get();
-
-        return response()->json(['songs' => $songs]);
+    
+        // Calculate total duration of the playlist
+        $totalDuration = $songs->reduce(function ($carry, $item) {
+            $duration = strtotime($item->duration) - strtotime('TODAY');
+            return $carry + $duration;
+        }, 0);
+    
+        $totalDurationFormatted = gmdate('H:i:s', $totalDuration);
+    
+        return response()->json(['songs' => $songs, 'total_duration' => $totalDurationFormatted]);
     }
 
     public function removeSongFromPlaylist(Request $request)
@@ -72,4 +84,3 @@ class SongsController extends Controller
         return redirect()->route('home')->with('success', 'Song removed from playlist successfully!');
     }
 }
-

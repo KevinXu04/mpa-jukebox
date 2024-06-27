@@ -8,11 +8,12 @@ function createPlaylistModal(songId, songName, songAuthor) {
     event.stopPropagation();
 }
 
-function showSongModal(songId, songName, songAuthor, songImage) {
+function showSongModal(songId, songName, songAuthor, songImage, songDuration) {
     document.getElementById('songInfoId').innerText = `ID: ${songId}`;
     document.getElementById('songInfoName').innerText = `Name: ${songName}`;
     document.getElementById('songInfoAuthor').innerText = `Author: ${songAuthor}`;
-    document.getElementById("songInfoImage").src = songImage
+    document.getElementById('songInfoDuration').innerText = `Duration: ${songDuration}`; // Set song duration
+    document.getElementById("songInfoImage").src = songImage;
 
     let modal = document.getElementById("songModal");
     modal.style.display = "block";
@@ -30,7 +31,7 @@ function showPlaylistSongsModal(playlistId) {
             data.songs.forEach(song => {
                 const li = document.createElement('li');
                 li.innerHTML = `
-                    ${song.name} by ${song.author}
+                    ${song.name} by ${song.author} (${song.duration})
                     <form method="POST" action="/playlist/remove-song" style="display:inline;margin:20px 0 20px 0;">
                         <input type="hidden" name="_token" value="${csrfToken}">
                         <input type="hidden" name="saved_lists_id" value="${playlistId}">
@@ -41,12 +42,13 @@ function showPlaylistSongsModal(playlistId) {
                 playlistSongsList.appendChild(li);
             });
 
+            document.getElementById('playlistTotalDuration').innerText = `Total Duration: ${data.total_duration}`; // Set total duration
+
             let modal = document.getElementById("playlistSongsModal");
             modal.style.display = "block";
         })
         .catch(error => console.error('Error fetching playlist songs:', error));
 }
-
 
 function openUpdatePlaylistModal(playlistId, playlistName) {
     document.getElementById('modalPlaylistName').value = playlistName;
@@ -68,3 +70,4 @@ window.onclick = function(event) {
         }
     });
 }
+    
