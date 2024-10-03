@@ -3,6 +3,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\Song;
+use App\Models\SavedList;
 
 class SongsController extends Controller
 {
@@ -14,17 +16,11 @@ class SongsController extends Controller
             return redirect()->route('login')->withErrors('Please log in first.');
         }
 
-        $playlists = DB::table('saved_lists')
-            ->leftJoin('saved_lists_songs', 'saved_lists.id', '=', 'saved_lists_songs.saved_lists_id')
-            ->select('saved_lists.*', DB::raw('COUNT(saved_lists_songs.song_id) as song_count'))
-            ->where('saved_lists.user_id', $userId)
-            ->groupBy('saved_lists.id', 'saved_lists.name', 'saved_lists.user_id')
+        $playlists = SavedList::withCount('songs')
+            ->where('user_id', $userId)
             ->get();
 
-        $results = DB::table('songs')
-            ->select('id', 'name', 'author', 'image', 'duration') // Ensure 'duration' is selected
-            ->inRandomOrder()
-            ->get();
+        $results = Song::inRandomOrder()->get();
 
         $genres = DB::table('genres')->get();
 
@@ -42,31 +38,26 @@ class SongsController extends Controller
             'song_id' => 'required',
         ]);
 
-        DB::table('saved_lists_songs')->insert([
-            'saved_lists_id' => $request->saved_lists_id,
-            'song_id' => $request->song_id,
-        ]);
+        $savedList = SavedList::findOrFail($request->saved_lists_id);
+        $song = Song::findOrFail($request->song_id);
+
+        $savedList->songs()->attach($song);
 
         return redirect()->route('home')->with('success', 'Song added to playlist successfully!');
     }
 
     public function getPlaylistSongs($playlistId)
     {
-        $songs = DB::table('saved_lists_songs')
-            ->join('songs', 'saved_lists_songs.song_id', '=', 'songs.id')
-            ->where('saved_lists_songs.saved_lists_id', $playlistId)
-            ->select('songs.id', 'songs.name', 'songs.author', 'songs.duration') // Ensure 'duration' is selected
-            ->get();
-    
-        // Calculate total duration of the playlist
-        $totalDuration = $songs->reduce(function ($carry, $item) {
+        $savedList = SavedList::with('songs')->findOrFail($playlistId);
+
+        $totalDuration = $savedList->songs->reduce(function ($carry, $item) {
             $duration = strtotime($item->duration) - strtotime('TODAY');
             return $carry + $duration;
         }, 0);
-    
+
         $totalDurationFormatted = gmdate('H:i:s', $totalDuration);
-    
-        return response()->json(['songs' => $songs, 'total_duration' => $totalDurationFormatted]);
+
+        return response()->json(['songs' => $savedList->songs, 'total_duration' => $totalDurationFormatted]);
     }
 
     public function removeSongFromPlaylist(Request $request)
@@ -76,10 +67,8 @@ class SongsController extends Controller
             'song_id' => 'required|integer',
         ]);
 
-        DB::table('saved_lists_songs')
-            ->where('saved_lists_id', $request->saved_lists_id)
-            ->where('song_id', $request->song_id)
-            ->delete();
+        $savedList = SavedList::findOrFail($request->saved_lists_id);
+        $savedList->songs()->detach($request->song_id);
 
         return redirect()->route('home')->with('success', 'Song removed from playlist successfully!');
     }

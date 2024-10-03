@@ -94,7 +94,7 @@
                         <p id="songInfoId"></p>
                         <p id="songInfoName"></p>
                         <p id="songInfoAuthor"></p>
-                        <p id="songInfoDuration"></p> <!-- Display song duration -->
+                        <p id="songInfoDuration"></p>
                     </div>
                 </div>
             </div>
@@ -105,7 +105,7 @@
                 <span class="close" onclick="closeModal('playlistSongsModal')">&times;</span>
                 <h2>Playlist Songs</h2>
                 <ul id="playlistSongsList"></ul>
-                <p id="playlistTotalDuration"></p> <!-- Display total duration -->
+                <p id="playlistTotalDuration"></p>
             </div>
         </div>
     </div>
